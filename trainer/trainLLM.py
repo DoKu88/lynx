@@ -3,26 +3,28 @@ from datasets import Dataset
 from transformers import T5Tokenizer, T5ForConditionalGeneration, TrainingArguments, Trainer
 import torch
 
-# Load your custom dataset
-with open('data.json') as f:
-    data = json.load(f)
+# Load in a custom dataset, if it fails return false 
+def load_custom_dataset(filePath):
+    with open(filePath) as f:
+      data = json.load(f)
 
-# Convert to Hugging Face Dataset
+      # Convert to Hugging Face Dataset
 
-# Define the dataset
-dataset = Dataset.from_dict({
-                            "user": [item["user"] for item in data],
-                            "text": [item["text"] for item in data], 
-                            "summary": [item["summary"] for item in data]})
+      # Define the dataset
+      dataset = Dataset.from_dict({
+                                  "user": [item["user"] for item in data],
+                                  "text": [item["text"] for item in data], 
+                                  "summary": [item["summary"] for item in data]})
 
-# Split into train and validation sets
-split_datasets = dataset.train_test_split(test_size=0.1)
-train_dataset = split_datasets['train']
-val_dataset = split_datasets['test']
+      # Split into train and validation sets
+      split_datasets = dataset.train_test_split(test_size=0.1)
+      train_dataset = split_datasets['train']
+      val_dataset = split_datasets['test']
 
-# Initialize the tokenizer
-model_name = 't5-small'
-tokenizer = T5Tokenizer.from_pretrained(model_name)
+      return [train_dataset, val_dataset] 
+    
+    return False 
+
 
 # Preprocess the dataset
 # Add a delimiter between the user and the text and tokenize the inputs
@@ -51,6 +53,13 @@ def preprocess_function(examples):
 
     final_encodings["labels"] = labels["input_ids"]
     return final_encodings
+
+
+train_dataset, val_dataset = load_custom_dataset('../data/data.json')
+
+# Initialize the tokenizer
+model_name = 't5-small'
+tokenizer = T5Tokenizer.from_pretrained(model_name)
 
 # Tokenize the datasets
 tokenized_train_dataset = train_dataset.map(preprocess_function, batched=True)
