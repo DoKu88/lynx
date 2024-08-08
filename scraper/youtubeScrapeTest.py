@@ -74,8 +74,6 @@ def get_metadata_from_videos(channel_videos):
     return video_metadata
 
 if __name__ == '__main__':
-    video_url = 'https://www.youtube.com/shorts/EAiP4R6_q_4'
-
     channel_videos = get_channel_videos('https://www.youtube.com/@lexfridman')
     video_metadata_lst = get_metadata_from_videos(channel_videos)
 
