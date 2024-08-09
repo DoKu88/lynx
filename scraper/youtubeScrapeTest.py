@@ -4,11 +4,13 @@ from youtube_transcript_api import YouTubeTranscriptApi
 def download_video(url, output_path='../data'):
 
     video_path = f'{output_path}/%(title)s.%(ext)s'
+    print("Downloading video to: ", video_path)
     ydl_opts = {
         'outtmpl': video_path,
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
+        print("Downloaded video to: ", video_path)
 
 def download_video_from_metadata(video_metadata_lst, output_path='../data'):
     for video_metadata in video_metadata_lst:
@@ -72,7 +74,7 @@ def get_metadata_from_videos(channel_videos, channel_category):
     for video in video_entries:
 
         if channel_category == 'lex_fridman':
-            if not lex_fridman_channel_videos(video, restrict_guests=['mit', 'ai', 'and']):
+            if not lex_fridman_channel_videos(video, max_duration=3600, restrict_guests=['mit', 'ai', 'and']):
                 continue
                 
             video_metadata.append(video)
@@ -93,6 +95,6 @@ if __name__ == '__main__':
 
     print(video_metadata_lst[0])
     import pdb; pdb.set_trace() # break point before we decide to actually download something
-    download_transcript_from_metadata(video_metadata_lst[:1], '../data/transcripts') # put [:1] to not use a ton of data
-    #download_video_from_metadata(video_metadata_lst[:1], '../data/videoDownloads') # put [:1] to not use a ton of data
+    #download_transcript_from_metadata(video_metadata_lst[:1], '../data/transcripts') # put [:1] to not use a ton of data
+    download_video_from_metadata(video_metadata_lst[:1], '../data/videoDownloads') # put [:1] to not use a ton of data
 
