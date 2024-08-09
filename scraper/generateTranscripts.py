@@ -1,10 +1,11 @@
 from pyannote.audio import Pipeline
 from moviepy.editor import VideoFileClip
 import json
+import pickle
 
 # Open the file
 keys = None
-with open('file.json', 'r') as f:
+with open('../data/keys.json', 'r') as f:
     # Load JSON data from file
     keys = json.load(f)
 
@@ -25,6 +26,11 @@ audio.write_audiofile("../data/audio.wav")
 
 # apply pretrained pipeline
 diarization = pipeline("../data/audio.wav")
+
+transcriptFile = "../data/transcripts/NoamChomsky.pkl"
+# Open the file in write-binary mode and pickle the object
+with open(transcriptFile, 'wb') as file:
+    pickle.dump(diarization, file)
 
 # print the result
 for turn, _, speaker in diarization.itertracks(yield_label=True):
