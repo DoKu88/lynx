@@ -2,12 +2,23 @@ from pyannote.audio import Pipeline
 from moviepy.editor import VideoFileClip
 import json
 import pickle
+import assemblyai as aai
 
 # Open the file
 keys = None
 with open('../data/keys.json', 'r') as f:
     # Load JSON data from file
     keys = json.load(f)
+
+def tryAssemblyAI(audioFileName):
+  aai.settings.api_key = keys["api_keys"]["assemblyai"]["api_key"]
+  config = aai.TranscriptionConfig(speaker_labels=True)
+  transcriber = aai.Transcriber()
+
+  transcript = transcriber.transcribe(audioFileName, config=config)
+
+  for utterance in transcript.utterances:
+    print(f"Speaker {utterance.speaker}: {utterance.text}")
 
 pipeline = Pipeline.from_pretrained(
     "pyannote/speaker-diarization-3.1",
@@ -21,9 +32,15 @@ import torch
 videoFile = "../data/videoDownloads/NoamChomsky_LexFridman.webm"
 video = VideoFileClip(videoFile)
 
-audio = video.audio
+duration = video.duration
+subclip = video.subclip(0, 55)
+
+audio = subclip.audio
 audio.write_audiofile("../data/audio.wav")
 
+tryAssemblyAI("../data/audio.wav")
+
+exit()
 # apply pretrained pipeline
 diarization = pipeline("../data/audio.wav")
 
