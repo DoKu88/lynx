@@ -41,6 +41,7 @@ if __name__ == '__main__':
 
   # can later do a map reduce to parallelize this
   for fileName in audioFileNames:
+    # main assumption is that the audio files will all be structured the same way
     audioFileNameSpeakers = fileName.split("_")
     videoId = audioFileNameSpeakers.pop().split(".")[0] # videoId is the last element in the list
   
@@ -50,9 +51,6 @@ if __name__ == '__main__':
     print("videoFileNameSpeakers: ", audioFileNameSpeakers)
     print("videoId: ", videoId)
 
-    # fix speaker names to be names of speakers in the video
-    # not speaker A B C D etc
-    # Note: Currently hardcoded to be for Lex Fridman videos
     speakerNameDict = {}
     for i in range(len(audioFileNameSpeakers)):
       speakerNameDict[defaultSpeakerNames[i]] = audioFileNameSpeakers[i] 

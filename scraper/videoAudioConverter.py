@@ -31,6 +31,7 @@ if __name__ == '__main__':
 
   # can later do a map reduce to parallelize this
   for fileName in videoFileNames:
+    # main assumption is that all video files will be structured the same way
     videoFileNameSpeakers = fileName.split("_")
     videoId = videoFileNameSpeakers.pop().split(".")[0] # videoId is the last element in the list
     audioFileName = fileName.split(".")[0] + ".wav"

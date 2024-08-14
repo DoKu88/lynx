@@ -1,5 +1,4 @@
 import yt_dlp
-from youtube_transcript_api import YouTubeTranscriptApi
 import hashlib
 import os
 
