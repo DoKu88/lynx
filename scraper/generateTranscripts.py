@@ -56,33 +56,57 @@ def videoToAudio(videoFile, audioFileName, maxDuration=None):
     pass
   audio.write_audiofile(audioFileName)
 
-videoFileNameSpeakers = "NoamChomsky_LexFridman"
-videoDirectory = "../data/videoDownloads"
-audioDirectory = "../data/audio"
+# given a directory of video files, return a list of video file names
+def getVideoFileNames(videoDirectory, acceptedExtensions=(".webm", ".mp4")):
+  videoFileNames = []
+  for file in os.listdir(videoDirectory):
+    if file.endswith(acceptedExtensions):
+      videoFileNames.append(file)
 
-videoFileName = os.path.join(videoDirectory, f"{videoFileNameSpeakers}.webm")
-audioFileName = os.path.join(audioDirectory, f"{videoFileNameSpeakers}.wav")
+  return videoFileNames
 
-print("videoFileName: ", videoFileName)
-print("audioFileName: ", audioFileName)
+if __name__ == '__main__':
+  videoDirectory = "../data/videoDownloads"
+  audioDirectory = "../data/audio"
+  defaultSpeakerNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-videoToAudio(videoFileName, audioFileName, maxDuration=55)
+  videoFileNames = getVideoFileNames(videoDirectory)
 
-speakerNames = videoFileNameSpeakers.split("_")
-speakerNames.reverse()
-speakerNameDict = {}
-defaultSpeakerNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-for i in range(len(speakerNames)):
-  speakerNameDict[defaultSpeakerNames[i]] = speakerNames[i] 
+  # can later do a map reduce to parallelize this
+  for fileName in videoFileNames:
+    videoFileNameSpeakers = fileName.split("_")
+    videoId = videoFileNameSpeakers.pop().split(".")[0] # videoId is the last element in the list
+    audioFileName = fileName.split(".")[0] + ".wav"
 
-dialogue = diatarizeDialogue(audioFileName, speakerNameDict)
+    videoFileName = os.path.join(videoDirectory, fileName)
+    audioFileName = os.path.join(audioDirectory, audioFileName)
 
+    print("videoFileName: ", videoFileName)
+    print("audioFileName: ", audioFileName)
+    print("videoFileNameSpeakers: ", videoFileNameSpeakers)
+    print("videoId: ", videoId)
 
-for speaker in dialogue:
-  print(f"Speaker: {speaker}")
-  for i in range(len(dialogue[speaker]["text"])):
-    print(f"Dialogue: {dialogue[speaker]['text'][i]}")
-    print(f"Timestamps: {dialogue[speaker]['timestamps'][i]}")
-    print("\n")
+    # convert video to audio
+    videoToAudio(videoFileName, audioFileName, maxDuration=55)
 
-print("Done")
+    # fix speaker names to be names of speakers in the video
+    # not speaker A B C D etc
+    # Note: Currently hardcoded to be for Lex Fridman videos
+    speakerNameDict = {}
+    
+    for i in range(len(videoFileNameSpeakers)):
+      speakerNameDict[defaultSpeakerNames[i]] = videoFileNameSpeakers[i] 
+
+    # diatarize the dialogue
+    dialogue = diatarizeDialogue(audioFileName, speakerNameDict)
+
+    for speaker in dialogue:
+      print(f"Speaker: {speaker}")
+      for i in range(len(dialogue[speaker]["text"])):
+        print(f"Dialogue: {dialogue[speaker]['text'][i]}")
+        print(f"Timestamps: {dialogue[speaker]['timestamps'][i]}")
+        print("\n")
+
+    # Save the dialogue to a file
+
+  print("Done")

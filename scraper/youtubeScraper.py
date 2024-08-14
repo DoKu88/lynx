@@ -1,30 +1,30 @@
 import yt_dlp
 from youtube_transcript_api import YouTubeTranscriptApi
+import hashlib
+import os
 
-def download_video(url, output_path='../data'):
+# Download video from metadata using a specified output file format 
+def download_video(video_metadata, output_path='../data'):
+    url = video_metadata['url'] 
+    names = video_metadata['names']
+    video_id = video_metadata['id']
 
-    video_path = f'{output_path}/%(title)s.%(ext)s'
+    video_path = os.path.join(output_path, 
+                              f"{names[0].replace(' ','+')}_{names[1].replace(' ','+')}_%(id)s.%(ext)s")
     print("Downloading video to: ", video_path)
+
     ydl_opts = {
         'outtmpl': video_path,
     }
+
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
         print("Downloaded video to: ", video_path)
 
-def download_video_from_metadata(video_metadata_lst, output_path='../data'):
+def download_videos(video_metadata_lst, output_path='../data'):
+    # use map reduce to parallelize this
     for video_metadata in video_metadata_lst:
-        download_video(video_metadata['url'], output_path)
-
-def download_transcript_from_metadata(video_metadata_lst, output_path='../data'):
-
-    for video_metadata in video_metadata_lst:
-        video_id = video_metadata['id']
-        transcript = YouTubeTranscriptApi.get_transcript(video_id)
-
-        with open(f'{output_path}/{video_id}.txt', 'w') as f:
-            for entry in transcript:
-                f.write(f"{entry['start']} - {entry['duration']}: {entry['text']}\n")
+        download_video(video_metadata, output_path)
 
 def get_channel_videos(channel_url):
     ydl_opts = {
@@ -95,6 +95,6 @@ if __name__ == '__main__':
 
     print(video_metadata_lst[0])
     import pdb; pdb.set_trace() # break point before we decide to actually download something
-    #download_transcript_from_metadata(video_metadata_lst[:1], '../data/transcripts') # put [:1] to not use a ton of data
-    download_video_from_metadata(video_metadata_lst[:1], '../data/videoDownloads') # put [:1] to not use a ton of data
+
+    download_videos(video_metadata_lst[:1], '../data/videoDownloads') # put [:1] to not use a ton of data
 
