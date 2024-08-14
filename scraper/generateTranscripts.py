@@ -2,12 +2,8 @@ from moviepy.editor import VideoFileClip
 import json
 import assemblyai as aai
 import os 
-
-# Open the file
-keys = None
-with open('../data/keys.json', 'r') as f:
-    # Load JSON data from file
-    keys = json.load(f)
+import utils
+from utils import keys
 
 # given an audio file return the diarized dialogue
 # in the form of a dictionary with the speaker as the key
@@ -37,65 +33,29 @@ def diatarizeDialogue(audioFileName, speakerNameDict):
   print("Dialogue extraction complete")
   return dialogue
 
-# given a video file, extract the audio and save it to a file
-def videoToAudio(videoFile, audioFileName, maxDuration=None):
-  video = VideoFileClip(videoFile)
-
-  subclip = None
-  duration = video.duration
-
-  if maxDuration is None:
-    subclip = video.subclip(0, duration)
-  else:
-    subclip = video.subclip(0, min(maxDuration, duration))
-
-  audio = subclip.audio
-
-  # create audio file 
-  with open(audioFileName, 'wb') as f:
-    pass
-  audio.write_audiofile(audioFileName)
-
-# given a directory of video files, return a list of video file names
-def getVideoFileNames(videoDirectory, acceptedExtensions=(".webm", ".mp4")):
-  videoFileNames = []
-  for file in os.listdir(videoDirectory):
-    if file.endswith(acceptedExtensions):
-      videoFileNames.append(file)
-
-  return videoFileNames
-
 if __name__ == '__main__':
-  videoDirectory = "../data/videoDownloads"
   audioDirectory = "../data/audio"
   defaultSpeakerNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
-  videoFileNames = getVideoFileNames(videoDirectory)
+  audioFileNames = utils.getFileNames(audioDirectory, acceptedExtensions=(".wav"))
 
   # can later do a map reduce to parallelize this
-  for fileName in videoFileNames:
-    videoFileNameSpeakers = fileName.split("_")
-    videoId = videoFileNameSpeakers.pop().split(".")[0] # videoId is the last element in the list
-    audioFileName = fileName.split(".")[0] + ".wav"
+  for fileName in audioFileNames:
+    audioFileNameSpeakers = fileName.split("_")
+    videoId = audioFileNameSpeakers.pop().split(".")[0] # videoId is the last element in the list
+  
+    audioFileName = os.path.join(audioDirectory, fileName)
 
-    videoFileName = os.path.join(videoDirectory, fileName)
-    audioFileName = os.path.join(audioDirectory, audioFileName)
-
-    print("videoFileName: ", videoFileName)
     print("audioFileName: ", audioFileName)
-    print("videoFileNameSpeakers: ", videoFileNameSpeakers)
+    print("videoFileNameSpeakers: ", audioFileNameSpeakers)
     print("videoId: ", videoId)
-
-    # convert video to audio
-    videoToAudio(videoFileName, audioFileName, maxDuration=55)
 
     # fix speaker names to be names of speakers in the video
     # not speaker A B C D etc
     # Note: Currently hardcoded to be for Lex Fridman videos
     speakerNameDict = {}
-    
-    for i in range(len(videoFileNameSpeakers)):
-      speakerNameDict[defaultSpeakerNames[i]] = videoFileNameSpeakers[i] 
+    for i in range(len(audioFileNameSpeakers)):
+      speakerNameDict[defaultSpeakerNames[i]] = audioFileNameSpeakers[i] 
 
     # diatarize the dialogue
     dialogue = diatarizeDialogue(audioFileName, speakerNameDict)
