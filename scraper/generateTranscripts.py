@@ -1,8 +1,7 @@
-from pyannote.audio import Pipeline
 from moviepy.editor import VideoFileClip
 import json
-import pickle
 import assemblyai as aai
+import os 
 
 # Open the file
 keys = None
@@ -10,49 +9,80 @@ with open('../data/keys.json', 'r') as f:
     # Load JSON data from file
     keys = json.load(f)
 
-def tryAssemblyAI(audioFileName):
+# given an audio file return the diarized dialogue
+# in the form of a dictionary with the speaker as the key
+# and the value as a list of dialogue snippets and timestamps
+def diatarizeDialogue(audioFileName, speakerNameDict):
+  # diatarize the audio file
   aai.settings.api_key = keys["api_keys"]["assemblyai"]["api_key"]
   config = aai.TranscriptionConfig(speaker_labels=True)
   transcriber = aai.Transcriber()
 
+  print("Transcribing audio file..")
   transcript = transcriber.transcribe(audioFileName, config=config)
+  print("Transcription complete")
 
-  for utterance in transcript.utterances:
-    print(f"Speaker {utterance.speaker}: {utterance.text}")
+  # extract the diaglogue from the transcript & store in dictionary
+  dialogue = {}
 
-pipeline = Pipeline.from_pretrained(
-    "pyannote/speaker-diarization-3.1",
-    use_auth_token=keys["api_keys"]["huggingface"])
+  print("Extracting dialogue from transcript..")
+  for utterance in transcript.utterances:    
+    key = speakerNameDict[utterance.speaker]
+    if key not in dialogue:
+      dialogue[key] = {"text": [utterance.text], "timestamps": [(utterance.start, utterance.end)]}
+    else:
+      dialogue[key]["text"].append(utterance.text)
+      dialogue[key]["timestamps"].append((utterance.start, utterance.end))
 
-# send pipeline to GPU (when available)
-import torch
-#pipeline.to(torch.device("cuda"))
+  print("Dialogue extraction complete")
+  return dialogue
 
-# Load the video file 
-videoFile = "../data/videoDownloads/NoamChomsky_LexFridman.webm"
-video = VideoFileClip(videoFile)
+# given a video file, extract the audio and save it to a file
+def videoToAudio(videoFile, audioFileName, maxDuration=None):
+  video = VideoFileClip(videoFile)
 
-duration = video.duration
-subclip = video.subclip(0, 55)
+  subclip = None
+  duration = video.duration
 
-audio = subclip.audio
-audio.write_audiofile("../data/audio.wav")
+  if maxDuration is None:
+    subclip = video.subclip(0, duration)
+  else:
+    subclip = video.subclip(0, min(maxDuration, duration))
 
-tryAssemblyAI("../data/audio.wav")
+  audio = subclip.audio
 
-exit()
-# apply pretrained pipeline
-diarization = pipeline("../data/audio.wav")
+  # create audio file 
+  with open(audioFileName, 'wb') as f:
+    pass
+  audio.write_audiofile(audioFileName)
 
-transcriptFile = "../data/transcripts/NoamChomsky.pkl"
-# Open the file in write-binary mode and pickle the object
-with open(transcriptFile, 'wb') as file:
-    pickle.dump(diarization, file)
+videoFileNameSpeakers = "NoamChomsky_LexFridman"
+videoDirectory = "../data/videoDownloads"
+audioDirectory = "../data/audio"
 
-# print the result
-for turn, _, speaker in diarization.itertracks(yield_label=True):
-    print(f"start={turn.start:.1f}s stop={turn.end:.1f}s speaker_{speaker}")
-# start=0.2s stop=1.5s speaker_0
-# start=1.8s stop=3.9s speaker_1
-# start=4.2s stop=5.7s speaker_0
-# ...
+videoFileName = os.path.join(videoDirectory, f"{videoFileNameSpeakers}.webm")
+audioFileName = os.path.join(audioDirectory, f"{videoFileNameSpeakers}.wav")
+
+print("videoFileName: ", videoFileName)
+print("audioFileName: ", audioFileName)
+
+videoToAudio(videoFileName, audioFileName, maxDuration=55)
+
+speakerNames = videoFileNameSpeakers.split("_")
+speakerNames.reverse()
+speakerNameDict = {}
+defaultSpeakerNames = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+for i in range(len(speakerNames)):
+  speakerNameDict[defaultSpeakerNames[i]] = speakerNames[i] 
+
+dialogue = diatarizeDialogue(audioFileName, speakerNameDict)
+
+
+for speaker in dialogue:
+  print(f"Speaker: {speaker}")
+  for i in range(len(dialogue[speaker]["text"])):
+    print(f"Dialogue: {dialogue[speaker]['text'][i]}")
+    print(f"Timestamps: {dialogue[speaker]['timestamps'][i]}")
+    print("\n")
+
+print("Done")
