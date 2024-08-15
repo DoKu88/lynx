@@ -23,13 +23,10 @@ def videoToAudio(videoFile, audioFileName, maxDuration=None):
     pass
   audio.write_audiofile(audioFileName)
 
-if __name__ == '__main__':
-  videoDirectory = "../data/videoDownloads"
-  audioDirectory = "../data/audio"
-
+def video_to_audio_directory(videoDirectory, audioDirectory, maxDuration=None):
   videoFileNames = utils.getFileNames(videoDirectory, acceptedExtensions=(".webm", ".mp4"))
 
-  # can later do a map reduce to parallelize this
+  # can later parallelize this
   for fileName in videoFileNames:
     # main assumption is that all video files will be structured the same way
     videoFileNameSpeakers = fileName.split("_")
@@ -45,6 +42,31 @@ if __name__ == '__main__':
     print("videoId: ", videoId)
 
     # convert video to audio
-    videoToAudio(videoFileName, audioFileName, maxDuration=55)
+    videoToAudio(videoFileName, audioFileName, maxDuration=500)
+
+
+if __name__ == '__main__':
+  videoDirectory = "../data/videoDownloads"
+  audioDirectory = "../data/audio"
+
+  videoFileNames = utils.getFileNames(videoDirectory, acceptedExtensions=(".webm", ".mp4"))
+
+  # can later parallelize this
+  for fileName in videoFileNames:
+    # main assumption is that all video files will be structured the same way
+    videoFileNameSpeakers = fileName.split("_")
+    videoId = videoFileNameSpeakers.pop().split(".")[0] # videoId is the last element in the list
+    audioFileName = fileName.split(".")[0] + ".wav"
+
+    videoFileName = os.path.join(videoDirectory, fileName)
+    audioFileName = os.path.join(audioDirectory, audioFileName)
+
+    print("videoFileName: ", videoFileName)
+    print("audioFileName: ", audioFileName)
+    print("videoFileNameSpeakers: ", videoFileNameSpeakers)
+    print("videoId: ", videoId)
+
+    # convert video to audio
+    videoToAudio(videoFileName, audioFileName, maxDuration=500)
 
   print("Done")

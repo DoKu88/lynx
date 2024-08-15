@@ -22,7 +22,16 @@ def diatarizeDialogue(audioFileName, speakerNameDict):
   dialogue = {}
 
   print("Extracting dialogue from transcript..")
-  for utterance in transcript.utterances:    
+  for utterance in transcript.utterances:
+
+    if utterance.speaker not in speakerNameDict:
+      import pdb; pdb.set_trace()
+      print("Speaker not in speakerNameDict")
+      print("Speaker: ", utterance.speaker)
+      print("utterance: ", utterance.text)
+      print("timestamps: ", utterance.start, " ", utterance.end)
+      continue 
+
     key = speakerNameDict[utterance.speaker]
     if key not in dialogue:
       dialogue[key] = {"text": [utterance.text], "timestamps": [(utterance.start, utterance.end)]}
@@ -32,6 +41,15 @@ def diatarizeDialogue(audioFileName, speakerNameDict):
 
   print("Dialogue extraction complete")
   return dialogue
+
+'''
+Right now, we just assume that Led Fridman talks first and then the guest.
+However, for other podcasts this is not the case. 
+Need to add a check to see if the first speaker is the host or the guest from the transcript. 
+This will allow us to generalize this function to other podcasts as well.
+
+For now, let's just assume we're doing Lex Fridman podcasts
+'''
 
 if __name__ == '__main__':
   audioDirectory = "../data/audio"
